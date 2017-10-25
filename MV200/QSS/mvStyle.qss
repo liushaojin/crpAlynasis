@@ -1,0 +1,488 @@
+*{
+  font-size:18px;
+  color:black;
+  font-family:"宋体";
+}
+/****************************************************************************************/
+QLabel{background: transparent; font-size:18px; color:black; }
+QLabel#lab10{background: transparent; font-size:10px; color:black; }
+QLabel#lab11{background: transparent; font-size:11px; color:black; }
+QLabel#lab12{background: transparent; font-size:12px; color:black; }
+QLabel#lab13{background: transparent; font-size:13px; color:black; }
+QLabel#lab14{ background: transparent;font-size:14px; color:black; }
+QLabel#lab15{background: transparent; font-size:15px; color:black; }
+QLabel#lab16{background: transparent; font-size:16px; color:black; }
+QLabel#lab17{background: transparent; font-size:17px; color:black; }
+QLabel#lab18{background: transparent; font-size:18px; color:black; }
+QLabel#lab19{background: transparent; font-size:19px; color:black; }
+QLabel#lab20{background: transparent; font-size:20px; color:black; }
+QLabel#lab21{background: transparent; font-size:21px; color:black; }
+QLabel#lab22{background: transparent; font-size:22px; color:black; }
+QLabel#lab23{background: transparent; font-size:23px; color:black; }
+QLabel#lab24{background: transparent; font-size:24px; color:black; }
+QLabel#lab25{background: transparent; font-size:25px; color:black; }
+QLabel#lab26{background: transparent; font-size:26px; color:black; }
+QLabel#lab27{background: transparent; font-size:27px; color:black; }
+QLabel#lab28{background: transparent; font-size:28px; color:black; }
+QLabel#lab29{background: transparent; font-size:28px; color:black; }
+QLabel#lab30{background: transparent; font-size:30px; color:black; }
+
+/*状态报警样式*/
+QLabel#AlertMsg{
+font-size:22px;
+color:red;
+}
+
+
+/****************************************************************************************/
+QLineEdit{
+background: transparent;
+height:35;
+font-size:20px;
+border: 1px solid rgb(41, 57, 85);
+border-radius:3px;
+selection-background-color:green;
+color:black;
+}
+
+QLineEdit:hover{
+background: transparent;
+border: 1px solid blue;
+color:black;
+font-size:21px;
+}
+
+QLineEdit[echoMode="3"]{
+lineedit-password-character: 9679;
+}
+
+QLineEdit:!Enabled {
+background: transparent;
+border: 0px solid blue;
+}
+
+/****************************************************************************************/
+QCheckBox {spacing: 5px; color:black; font-size:18px;}
+QCheckBox:hover {spacing: 5px; color:green; font-size:18px;}
+QCheckBox::indicator  {width: 15px; height: 15px;}
+QCheckBox::indicator:unchecked          {image: url(:/resource/resource/chk/checkbox_unchecked.png);}
+QCheckBox::indicator:unchecked:disabled {image: url(:/resource/resource/chk/checkbox_unchecked_pressed.png);}
+QCheckBox::indicator:unchecked:hover    {image: url(:/resource/resource/chk/checkbox_unchecked_hover.png);}
+QCheckBox::indicator:checked            {image: url(:/resource/resource/chk/checkbox_checked_pressed.png);}
+QCheckBox::indicator:checked:disabled   {image: url(:/resource/resource/chk/checkbox_checked.png);}
+QCheckBox::indicator:checked:hover      {image: url(:/resource/resource/chk/checkbox_checked_hover.png);}
+
+
+/****************************************************************************************/
+QComboBox {
+height:35;
+background: transparent;
+border-color: black;
+border-style: outset;
+border-width: 1px;
+border-radius: 1px;
+padding-left: 8px;
+padding-right: 8px;
+font-size:19px;
+font-family:"宋体";
+}
+
+QComboBox:!enabled {
+height:35;
+background: transparent;
+border-color: gray;
+border-width: 1px;
+padding-left: 8px;
+padding-right: 8px;
+}
+
+QComboBox::hover{border: 1px solid #32435E;}
+
+QComboBox QAbstractItemView {
+border: 2px solid #32435E;
+font-size:25px;
+font-family:"宋体";
+}
+
+/****************************************************************************************/
+/*RadioButton样式设置*/
+QRadioButton#rdo{width:150; height:64; margin-left:5; font-size:23px; background-image:url(:/resource/resource/rdo/btn8.png); background-repeat:no-repeat; background-position:center;}
+QRadioButton#rdo:hover{width:150; height:64; font-size:24px; color:white;}
+QRadioButton#rdo:!enabled{width:150; height:64; font-size:24px; color:yellow;}
+QRadioButton#rdo:checked{width:150; height:64; font-size:23px; background-image:url(:/resource/resource/rdo/btn9.png); background-repeat:no-repeat; background-position:center;}
+QRadioButton#rdo::indicator{image: url(:);}
+/*QRadioButton#rdo::indicator {width:30px; height:30px;}*/
+/*QRadioButton#rdo::indicator::unchecked{image: url(:/resource/resource/rdo/radiobutton-unchecked.png);}*/
+/*QRadioButton#rdo::indicator::checked{image: url(:/resource/resource/rdo/radiobutton-checked.png);}*/
+
+QRadioButton#rdo2{width:90; height:50; font-size:22px; background-image:url(:/resource/resource/button/button6.png); background-repeat:no-repeat; background-position:center;}
+QRadioButton#rdo2:hover{width:90; height:50; font-size:22px; color:white;}
+QRadioButton#rdo2:!enabled{width:90; height:50; font-size:22px; color:yellow;}
+QRadioButton#rdo2:checked{width:90; height:50; font-size:22px; background-image:url(:/resource/resource/button/button6_pressed.png); background-repeat:no-repeat; background-position:center;}
+QRadioButton#rdo2::indicator{image: url(:);}
+
+/****************************************************************************************/
+QPushButton:focus{padding: -1;} /*去掉选中时的方框*/
+
+QPushButton#button{
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,	/*三个坐标对应的是上。中。下的background的颜色*/
+stop: 0 #122C39, stop: 0.5 #758385,
+stop: 1.0 #15A8FF);
+border-color: #11505C;/*改变boder的颜色，以便实现动态感觉*/
+border-style: outset;
+border-width: 1px;/*boder的长度，有突出效果*/
+border-radius: 1px;
+padding: 1px;
+}
+QPushButton#button::pressed{
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+stop: 0 #969B9C, stop: 0.5 #16354B,
+stop: 1.0 #244F76);
+border-color: #11505C;
+}
+
+QPushButton#btn{width:120; height:60;  border-radius:8px; font-size:20px; background-color:rgba(50,50,50,30); }
+QPushButton#btn:hover{width:120;height:60; border-radius:8px; font-size:23px; color:darkCyan; background-color:rgba(75,75,75,90);}
+QPushButton#btn:pressed{width:120;height:60; border-radius:8px; font-size:21px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+QPushButton#button1{width:140; height:69;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/button/button1.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button1:hover{width:140; height:69; border-radius:8px; font-size:23px; color:darkCyan; background-image:url(:/resource/resource/button/button1.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button1:pressed{width:140; height:69; border-radius:8px; font-size:25px; color:darkMagenta; background-image:url(:/resource/resource/button/button1_pressed.png); background-repeat:no-repeat; background-position:center; }
+
+QPushButton#button2{width:134; height:48;  border-radius:5px; font-size:16px; background-image:url(:/resource/resource/button/button2.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button2:hover{width:134; height:48; border-radius:8px; font-size:17px; color:darkCyan; background-image:url(:/resource/resource/button/button2.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button2:pressed{width:134; height:48; border-radius:8px; font-size:18px; color:darkMagenta; background-image:url(:/resource/resource/button/button2_pressed.png); background-repeat:no-repeat; background-position:center; }
+
+QPushButton#button3{width:198; height:84;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/button/button3.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button3:hover{width:198; height:84; border-radius:8px; font-size:23px; color:darkCyan; background-image:url(:/resource/resource/button/button3.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button3:pressed{width:198; height:84; border-radius:8px; font-size:25px; color:darkMagenta; background-image:url(:/resource/resource/button/button3_pressed.png); background-repeat:no-repeat; background-position:center; }
+
+QPushButton#button4{width:200; height:72;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/button/button4.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button4:hover{width:200; height:72; border-radius:8px; font-size:23px; color:darkCyan; background-image:url(:/resource/resource/button/button4.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button4:pressed{width:200; height:72; border-radius:8px; font-size:25px; color:darkMagenta; background-image:url(:/resource/resource/button/button4_pressed.png); background-repeat:no-repeat; background-position:center; }
+
+QPushButton#button5{width:150; height:64;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/button/button5.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button5:hover{width:150; height:64; border-radius:8px; font-size:23px; color:darkCyan; background-image:url(:/resource/resource/button/button5.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button5:pressed{width:150; height:64; border-radius:8px; font-size:25px; color:darkMagenta; background-image:url(:/resource/resource/button/button5_pressed.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button5:disabled{width:150; height:64; color:yellow; border-radius:5px; font-size:20px; background-image:url(:/resource/resource/button/button5.png); background-repeat:no-repeat; background-position:center; }
+
+
+QPushButton#button6{width:90; height:50;  border-radius:5px; font-size:18px; background-image:url(:/resource/resource/button/button6.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button6:hover{width:90; height:50; border-radius:8px; font-size:18px; color:darkCyan; background-image:url(:/resource/resource/button/button6.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button6:pressed{width:90; height:50; border-radius:8px; font-size:18px; color:darkMagenta; background-image:url(:/resource/resource/button/button6_pressed.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button6:disabled{width:90; height:50; color:yellow; border-radius:5px; font-size:18px; background-image:url(:/resource/resource/button/button6.png); background-repeat:no-repeat; background-position:center; }
+
+
+QPushButton#button7{width:60; height:50;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/button/button7.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button7:hover{width:60; height:50; border-radius:8px; font-size:23px; color:darkCyan; background-image:url(:/resource/resource/button/button7.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button7:pressed{width:60; height:50; border-radius:8px; font-size:25px; color:darkMagenta; background-image:url(:/resource/resource/button/button7_pressed.png); background-repeat:no-repeat; background-position:center; }
+
+QPushButton#button8{width:50; height:35; border-radius:5px; font-size:20px; background-image:url(:/resource/resource/button/button8.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button8:hover{width:50; height:35; border-radius:8px; font-size:23px; color:darkCyan; background-image:url(:/resource/resource/button/button8.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button8:pressed{width:50; height:35; border-radius:8px; font-size:25px; color:darkMagenta; background-image:url(:/resource/resource/button/button8_pressed.png); background-repeat:no-repeat; background-position:center; }
+
+QPushButton#button9{width:174; height:49;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/button/button9.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button9:hover{width:174; height:49; border-radius:8px; font-size:23px; color:darkCyan; background-image:url(:/resource/resource/button/button9.png); background-repeat:no-repeat; background-position:center; }
+QPushButton#button9:pressed{width:174; height:49; border-radius:8px; font-size:25px; color:darkMagenta; background-image:url(:/resource/resource/button/button9_pressed.png); background-repeat:no-repeat; background-position:center; }
+
+
+/*测试申请按钮*/
+    QPushButton#btnTestApplication{/*width:80;height:45;*/  border-radius:5px; font-size:20px; background-color:rgba(90,90,90,90); }
+    QPushButton#btnTestApplication:hover{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkCyan; background-color:rgba(75,75,75,90);}
+    QPushButton#btnTestApplication:pressed{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+/*工作状态按钮*/
+    QPushButton#btnWorkStatus{/*width:80;height:45;*/  border-radius:5px; font-size:20px; background-color:rgba(50,90,50,45); }
+    QPushButton#btnWorkStatus:hover{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkCyan; background-color:rgba(75,75,75,90);}
+    QPushButton#btnWorkStatus:pressed{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+/*结果查询按钮*/
+    QPushButton#btnResultQuery{/*width:80;height:45;*/  border-radius:5px; font-size:20px; background-color:rgba(50,70,70,90); }
+    QPushButton#btnResultQuery:hover{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkCyan; background-color:rgba(75,75,75,90);}
+    QPushButton#btnResultQuery:pressed{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+/*统计报表按钮*/
+    QPushButton#btnStatisticalReport{/*width:80;height:45;*/  border-radius:5px; font-size:20px; background-color:rgba(50,90,50,90); }
+    QPushButton#btnStatisticalReport:hover{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkCyan; background-color:rgba(75,75,75,90);}
+    QPushButton#btnStatisticalReport:pressed{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+ /*项目设置按钮*/
+    QPushButton#btnProjectSetting{/*width:80;height:45;*/  border-radius:5px; font-size:20px; background-color:rgba(50,50,88,30); }
+    QPushButton#btnProjectSetting:hover{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkCyan; background-color:rgba(75,75,75,90);}
+    QPushButton#btnProjectSetting:pressed{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+/*系统设置按钮*/
+    QPushButton#btnSysSetting{/*width:80;height:45;*/  border-radius:5px; font-size:20px; background-color:rgba(88,88,88,88); }
+    QPushButton#btnSysSetting:hover{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkCyan; background-color:rgba(75,75,75,90);}
+    QPushButton#btnSysSetting:pressed{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+/*维护按钮*/
+    QPushButton#btnMaintain{/*width:80;height:45;*/  border-radius:5px; font-size:20px; background-color:rgba(50,50,50,88); }
+    QPushButton#btnMaintain:hover{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkCyan; background-color:rgba(75,75,75,90);}
+    QPushButton#btnMaintain:pressed{/*width:80;height:45;*/ border-radius:5px; font-size:20px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+
+/*开始*/
+    QPushButton#btnStart{width:72; height:72;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/shortcutBar/start.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnStart:hover{width:72; height:72; border-radius:8px; font-size:20px; color:darkCyan; background-image:url(:/resource/resource/shortcutBar/start_horver.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnStart:pressed{width:72; height:72; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/start_Pressed.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnStart:disabled{width:72; height:72; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/start_disable.png); background-repeat:no-repeat; background-position:center; }
+
+/*暂停*/
+    QPushButton#btnPause{width:72; height:72;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/shortcutBar/pause.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnPause:hover{width:72; height:72; border-radius:8px; font-size:20px; color:darkCyan; background-image:url(:/resource/resource/shortcutBar/pause_hover.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnPause:pressed{width:72; height:72; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/pause_press.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnPause:disabled{width:72; height:72; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/pause_disable.png); background-repeat:no-repeat; background-position:center; }
+
+/*停止*/
+    QPushButton#btnStop{width:72; height:72;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/shortcutBar/stop.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnStop:hover{width:72; height:72; border-radius:8px; font-size:20px; color:darkCyan; background-image:url(:/resource/resource/shortcutBar/stop_horver.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnStop:pressed{width:72; height:72; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/stop_Pressed.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnStop:disabled{width:72; height:72; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/stop_disable.png); background-repeat:no-repeat; background-position:center; }
+
+
+ /*锁屏*/
+    QPushButton#btnLockScreen{width:90; height:90;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/shortcutBar/shutdown.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnLockScreen:hover{width:90; height:90; border-radius:8px; font-size:20px; color:darkCyan; background-image:url(:/resource/resource/shortcutBar/shutdown_press.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnLockScreen:pressed{width:90; height:90; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/shutdown_press.png); background-repeat:no-repeat; background-position:center; }
+
+
+/*紧急关机*/
+    QPushButton#btnEmergencyShutdown{width:90; height:90;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/shortcutBar/shutdown.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnEmergencyShutdown:hover{width:90; height:90; border-radius:8px; font-size:20px; color:darkCyan; background-image:url(:/resource/resource/shortcutBar/shutdown_press.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnEmergencyShutdown:pressed{width:90; height:90; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/shutdown_press.png); background-repeat:no-repeat; background-position:center; }
+
+/*关机*/
+    QPushButton#btnShutdown{width:90; height:90;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/shortcutBar/shutdown.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnShutdown:hover{width:90; height:90; border-radius:8px; font-size:20px; color:darkCyan; background-image:url(:/resource/resource/shortcutBar/shutdown_hover.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnShutdown:pressed{width:90; height:90; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/shutdown_press.png); background-repeat:no-repeat; background-position:center; }
+
+/*重启*/
+    QPushButton#btnRestart{width:90; height:90;  border-radius:5px; font-size:20px; background-image:url(:/resource/resource/shortcutBar/restart.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnRestart:hover{width:90; height:90; border-radius:8px; font-size:20px; color:darkCyan; background-image:url(:/resource/resource/shortcutBar/restart_hover.png); background-repeat:no-repeat; background-position:center; }
+    QPushButton#btnRestart:pressed{width:90; height:90; border-radius:8px; font-size:20px; color:darkMagenta; background-image:url(:/resource/resource/shortcutBar/restart_Pressed.png); background-repeat:no-repeat; background-position:center; }
+
+
+/****************************************************************************************/
+/*进度条*/
+QProgressBar:horizontal {
+border:none;
+border-radius:3px;
+text-align:center;
+background: white;
+padding: 1px;
+margin-right: 4ex;
+}
+
+QProgressBar::chunk {
+border-radius:3px;
+background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 green, stop: 1 white);
+margin-right: 2px;
+width: 10px;
+}
+
+
+/****************************************************************************************/
+/*QGroupBox样式*/
+QGroupBox{
+border: 1px solid darkgray;
+font: 18px Times New Roman;
+}
+
+QGroupBox::title {
+subcontrol-origin: margin;
+subcontrol-position: top left;
+padding: 0 0px;
+}
+
+/****************************************************************************************/
+/****主界面*4种液体状态**********/
+QLabel#CleaningLiquid_lack{ /*清洗液-缺*/
+        width:35; height:120;
+        background-image:url(:/resource/resource/StatusBar/CleaningLiquid_lack.png);
+        background-repeat:no-repeat; background-position:center;
+}
+QLabel#CleaningLiquid_normal{ /*清洗液-正常*/
+        width:35; height:120;
+        background-image:url(:/resource/resource/StatusBar/CleaningLiquid_normal.png);
+        background-repeat:no-repeat; background-position:center;
+}
+
+QLabel#Water_lack{ /*去离子水-缺*/
+        width:35; height:120;
+        background-image:url(:/resource/resource/StatusBar/Water_lack.png);
+        background-repeat:no-repeat; background-position:center;
+}
+QLabel#Water_normal{ /*去离子水-正常*/
+        width:35; height:120;
+        background-image:url(:/resource/resource/StatusBar/Water_normal.png);
+        background-repeat:no-repeat; background-position:center;
+}
+
+QLabel#HighWaste_full{ /*高浓度废液-满*/
+        width:35; height:120;
+        background-image:url(:/resource/resource/StatusBar/HighWaste_full.png);
+        background-repeat:no-repeat; background-position:center;
+}
+QLabel#HighWaste_normal{ /*高浓度废液-正常*/
+        width:35; height:120;
+        background-image:url(:/resource/resource/StatusBar/HighWaste_normal.png);
+        background-repeat:no-repeat; background-position:center;
+}
+
+QLabel#LowWaste_full{ /*低浓度废液-满*/
+        width:35; height:120;
+        background-image:url(:/resource/resource/StatusBar/LowWaste_full.png);
+        background-repeat:no-repeat; background-position:center;
+}
+QLabel#LowWaste_normal{ /*低浓度废液-正常*/
+        width:35; height:120;
+        background-image:url(:/resource/resource/StatusBar/LowWaste_normal.png);
+        background-repeat:no-repeat; background-position:center;
+}
+/**反应盘、试剂仓温度****/
+/*QProgressBar{
+        width:10px;
+        border: 1px solid black;
+        text-align: top;
+        padding: 1px;
+        border-bottom-right-radius: 7px;
+        border-bottom-left-radius: 7px;
+        background: QLinearGradient( x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 #fff,
+        stop: 0.4999 #eee,
+        stop: 0.5 #ddd,
+        stop: 1 #eee );
+}
+
+QProgressBar:horizontal {
+        border: 1px solid gray;
+        border-radius: 3px;
+        background: white;
+        padding: 1px;
+        text-align: right;
+        margin-right: 4ex;
+}
+QProgressBar::chunk:horizontal {
+        background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 green, stop: 1 white);
+        margin-right: 2px;
+        width: 10px;
+}
+QProgressBar::chunk {
+        background: QLinearGradient( x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 #78d,
+        stop: 0.4999 #46a,
+        stop: 0.5 #45a,
+        stop: 1 #238 );
+        border-bottom-right-radius: 7px;
+        border-bottom-left-radius: 7px;
+        border: 1px solid black;
+}*/
+
+
+/****************************************************************************************/
+QWidget:focus{outline: none;} /*去掉选中时的方框*/
+
+/*主界面*/
+QWidget#MainWidget{}
+
+/*主界面-状态栏(浮子传感器、温度、试剂状态信息)、功能菜单工具栏（顶部工具栏）*/
+QWidget#MainWidgetTop{border-radius:2px;background-color:rgba(50,50,50,50);}
+
+/*主界面-快捷按钮工具栏（左侧工具栏）*/
+QWidget#ShortcutBtnBar{border-radius:3px;background-color:rgba(50,50,50,30);}
+
+/*主界面-状态栏*/
+QWidget#statusMsgBar{border-radius:2px;background-color:rgba(50,50,50,40);}
+
+
+/****************************************************************************************/
+/**********表头**********/
+QHeaderView{
+        border: none;
+        border-bottom: 3px solid rgb(0, 78, 161);
+        background: transparent;
+        min-height: 25px;
+        font-size:18px;
+}
+QHeaderView:section:horizontal {
+        border: none;
+        font-size:18px;
+        color: rgb(2, 65, 132);
+        background: transparent;
+        padding-left: 3px;
+}
+QHeaderView:section:horizontal:hover {
+        color: green;
+        font-size:18px;
+        background: rgb(0, 78, 161);
+}
+QHeaderView:section:horizontal:pressed {
+        color: black;
+        font-size:18px;
+        background: rgb(6, 94, 187);
+}
+
+
+/**********表格**********/
+/*QTableView样式*/
+QTableView,QTableWidget::indicator:checked{
+        image:url(://resource/resource/tableView/checked.png);
+}
+
+QTableView,QTableWidget::indicator:unchecked{
+        image:url(://resource/resource/tableView/unChecked.png);
+}
+
+QTableView,QTableWidget {
+        border: 1px solid rgb(111, 156, 207);
+        gridline-color: rgb(111, 156, 207);
+        background: rgb(232, 241, 232);
+        font-size:18px;
+}
+QTableView,QTableWidget:item {
+        padding-left: 5px;
+        padding-right: 5px;
+        border: none;
+        font-size:18px;
+        background: rgb(232, 241, 252);
+        border-right: 1px solid rgb(111, 156, 207);
+        border-bottom: 1px solid rgb(111, 156, 207);
+}
+QTableView,QTableWidget:item:selected {
+        background: rgba(252,216,223, 100);
+        font-size: 18px;
+        color: black;
+}
+QTableView,QTableWidget#tableView:item:selected:!active {
+        font-size:18px;
+        color: rgb(65, 65, 65);
+}
+QTableView,QTableWidget:indicator {
+        width: 20px;
+        height: 20px;
+        font-size:18px;
+}
+QTableView::indicator:checked{
+     image:url(://resource/resource/tableView/checked.png);
+}
+QTableView::indicator:unchecked{
+        image:url(://resource/resource/tableView/unChecked.png);
+}
+
+/****************************************************************************************/
+/*QTabWidget#tabW::pane{border-top:0px solid#e8f3f9;}*/
+QTabBar::tab{background: transparent; width:120; height:30; border-bottom-color: #C2C7CB; min-width:100px; min-height:20px; font:18px Times New Roman;}
+QTabBar::tab:selected{background: transparent;color: black; background-color:#ffffff;  border-radius:0px;}
+QTabBar::tab:hover:selected {background: transparent;color: green; border-color:#ffffff;}
+QTabBar::tab:hover:!selected {background: transparent;color: green; border-color:#0E96E4; }
+QTabBar::tab:!selected{background: transparent;color: black; background-color:#00C8E5; }
+
+
+/****************************************************************************************/
+/*LOGO*/
+QFrame#frameLogo{width:200; height:65; background-image:url(:/resource/resource/logo.png);background-repeat:no-repeat; background-position:center;}
+QFrame#frameLogoLogin{width:1080; height:500; background-image:url(:/resource/resource/logo_login.png);background-repeat:no-repeat; background-position:center;}
+
+
+

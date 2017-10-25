@@ -1,0 +1,168 @@
+*{
+  font-size:20px;
+  color:black;
+  font-family:"宋体";
+}
+
+QWidget{
+background:
+           qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #15ABFF, stop: 1.0 #15A8FF);
+}
+
+
+QGroupBox{
+background:transparent;
+}
+
+
+/*****QLabel********/
+/********************************************************************************************/
+QLabel{
+background:transparent;
+font-size:22px;
+}
+
+
+/*****QCheckBox********/
+/********************************************************************************************/
+QLineEdit,QTextEdit {
+background:transparent;
+border: 1px solid #32435E;
+border-radius: 3px; /*控件边框的弧度，数值越大，则弯曲得越厉害*/
+padding: 0 5px;
+height:35;
+}
+
+QLineEdit:hover{
+background: transparent;
+border: 1px solid green;
+}
+
+
+/*****QCheckBox********/
+/********************************************************************************************/
+QCheckBox {
+spacing: 5px;
+background:transparent;	 /*控件背景透明*/
+}
+
+QCheckBox::indicator {
+ width: 13px;
+ height: 13px;
+}
+
+
+/*****QPushButton********/
+/********************************************************************************************/
+QPushButton,QToolButton{
+background:
+           qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #5B5F5F, stop: 0.5 #0C2436, stop: 1.0 #27405A);
+border-style: outset;
+border-width: 1px;
+border-radius: 5px;
+border-color: #11223F;
+padding: 1px;
+color:white;
+}
+
+QPushButton::hover,QToolButton::hover{
+ background:
+            qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #758385, stop: 0.5 #122C39, stop: 1.0 #0E7788);
+border-color: #11505C;
+}
+
+QPushButton::pressed,QToolButton::pressed{
+background:
+          qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #969B9C, stop: 0.5 #16354B, stop: 1.0 #244F76);
+border-color: #11505C;
+}
+
+
+/*****QComboBox********/
+/********************************************************************************************/
+QComboBox {
+background: transparent;
+min-width: 5em;
+border-color: black;
+border-style: outset;
+border-width: 1px;
+border-radius: 1px;
+padding: 5px;
+padding-left: 30px;
+font-size:19px;
+font-family:"宋体";
+}
+
+QComboBox::hover{
+border: 1px solid #32435E;
+}
+
+QComboBox QAbstractItemView {
+border: 2px solid #32435E;
+selection-background-color:
+         qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #506B79,stop: 1.0 #0D95A6);
+}
+
+
+/*****QHeaderView*表头样式********/
+/********************************************************************************************/
+QHeaderView{
+border: none;
+min-height: 30px;
+background: transparent;
+font-size:20px;
+}
+
+/*****QTableView*表格样式********/
+/********************************************************************************************/
+QTableView{
+border: none;
+background: transparent;    /*控件背景透明*/
+}
+
+QTableView::item {
+padding-left: 5px;
+padding-right: 5px;
+border: none;
+color: black;
+}
+
+QTableView::item:selected {
+background: rgb(130, 180, 100);
+}
+
+QTableView::item:selected:active {
+color: green;
+}
+
+
+QTableView::indicator{ /*QTableView复选框的大小*/
+width:25px;
+height:25px;
+}
+
+QTableView::indicator:checked{
+image:url(://resource/resource/tableView/check.png);
+}
+
+QTableView::indicator:unchecked{
+image:url(://resource/resource/resource/tableView/null);
+}
+
+
+
+
+
+
+
+/*****aaa********/
+/********************************************************************************************/
+QWidget:focus{outline: none;} /*去掉选中时的方框*/
+
+
+/*****bbb********/
+/********************************************************************************************/
+
+
+/*****aaa********/
+/********************************************************************************************/

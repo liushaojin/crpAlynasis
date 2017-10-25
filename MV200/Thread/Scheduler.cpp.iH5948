@@ -1,0 +1,1064 @@
+#include "Scheduler.h"
+#include <QDebug>
+
+GScheduler * gScheduler;
+GScheduler::GScheduler(QThread *parent)
+    : QThread(parent)
+{
+    gMVFrame = new MVFrame;  //指令参数类
+
+    WorkModeFlag = MV_State_unChecked; //工作模式状态标志=开机未自检
+
+    //开机/复位初始化参数
+    initParam();
+
+    //周期定时器
+    CycleTimer = new QTimer;
+    connect(CycleTimer, SIGNAL(timeout()), this, SLOT(slt_CycleTimer_timeout()));
+    connect(this, SIGNAL(sig_CycleTimer_start(int)), CycleTimer,SLOT(start(int)));
+    connect(this, SIGNAL(sig_CycleTimer_stop()), CycleTimer,SLOT(stop()));
+
+    //
+    connect(this, SIGNAL(sig_TcpServer_Write(QString)), gTcpServer, SLOT(slt_Send(QString)));
+    connect(this, SIGNAL(sig_TcpServer_Write(char*, int)), gTcpServer, SLOT(slt_Send(char*, int)));
+}
+
+//开机/复位初始化参数
+void GScheduler::initParam()
+{
+    CurrentSampleSlot = "1";    //当前测试的样本架的编号（用于判断是前后测试是否在同一样本架上）
+    isCurrentSampleNeedMix= 0;
+    CurrentMixSampleSlot = 0;     //当前搅拌位的样本架
+    CurrentMixSampleNo = 0;       //当前搅拌位的样本位
+    CurrentMixSamplePos = "";  //当前搅拌的样本位置
+    ChangedSampleSlot = CHANGESAMPLESLOT;
+
+    isBootCleanedFlag = false; //开机是否已经清洗了反应杯
+    m_BootCleanedTimes = 0;    //开机清洗的反应杯个数
+
+    CurrentCleaningCupNo = 0;  //当前清洗的反应杯编号（从0开始计数）
+    m_UsedCup = 1;             //记录反应杯的使用情况
+    m_TaskPt = -1;              //记录队列中新增测试在任务队列中的位置
+    for(int i = 0; i < TASKCOUNT; i ++)
+    {
+        TaskList[i].Status = 0;
+        TaskList[i].AD_Count = 0;
+        TaskList[i].isAdded = false;
+    }
+
+    //最后一个测试加完R2后还要跑的空周期次数
+    m_BlankCycleCount = BLANKCYCLE_R2;
+
+}
+
+//机器是否正在运行中（即1：普通测试，质控测试，定标测试，暂停。   0：其他工作状态）
+int GScheduler::get_isRunning()
+{
+    if( WorkModeFlag == MV_State_Normal || WorkModeFlag == MV_State_QC
+            || WorkModeFlag == MV_State_CalibrateT || WorkModeFlag == MV_State_Pause)
+        return 1;
+    else
+        return 0;
+}
+
+//工作模式状态标志
+int GScheduler::getWorkModeFlag() { return WorkModeFlag; }
+void GScheduler::setWorkModeFlag(int flag) { WorkModeFlag = flag; }
+
+//查询“任务队列”中pt位置的任务信息
+Task GScheduler::getTaskList(int pt) { return TaskList[pt]; }
+
+//开机是否已经清洗了反应杯
+int GScheduler::get_isBootCleanedFlag()  {return isBootCleanedFlag;}
+
+//是否跑周期指令
+bool GScheduler::get_isCycleFlag() {return isCycleFlag;}
+
+//测试完成（即采光采完成）
+void GScheduler::FinishedTest(int pt)
+{
+    if( TaskList[pt].Status ==1 )
+    {
+        TaskList[pt].AD_Count = 0; //采光次数
+        TaskList[pt].Status = 0;   //状态：（0:空闲， 1:任务测试）
+        TaskList[pt].isAdded = false;
+
+        //更新反应杯状态
+        emit sig_setCupStatus(TaskList[pt].Cup[0], "End2");
+        emit sig_setCupStatus(TaskList[pt].Cup[1], "End2");
+    }
+}
+
+//开机初始化（复位）
+int GScheduler::InitialMachine()  {return setMotionType(1);}
+
+//开始测试
+int GScheduler::TaskStart()
+{
+    qDebug() << "MV200 WorkModeFlag:" << WorkModeFlag;
+    //MV100工作状态
+    if( WorkModeFlag == MV_State_Normal || WorkModeFlag == MV_State_QC || WorkModeFlag == MV_State_CalibrateT ) //测试正在进行中，返回
+    {
+        return 0;
+    }
+    else if( WorkModeFlag == MV_State_Stop )
+    {
+        //isCycleFlag = 1;       //是否跑周期指令
+        WorkModeFlag = MV_State_Normal;  //继续加样
+        return 1;
+    }
+    else if( WorkModeFlag == MV_State_Pause )
+    {
+        //isCycleFlag = 1;   //是否跑周期指令
+        WorkModeFlag = MV_State_Normal;  //继续加样
+        return 1;
+    }
+    else
+    {
+        isCycleFlag = 1;   //是否跑周期指令
+        return setMotionType(2);
+    }
+}
+
+//读Mifare卡片（空闲才能读卡）
+int GScheduler::StartReadCard()  {return setMotionType(99);}
+
+//设置调用分支
+int GScheduler::setMotionType(int type)
+{
+    if(this->isRunning())
+    {
+        qDebug() << "****GScheduler is running...";
+        return 0; //线程工作中(未执行)
+    }
+
+    m_MotionFinished=0;
+    m_MotionType = type;
+    this->start();
+
+    return 1;
+}
+
+void GScheduler::run()
+{
+    m_MotionFinished = 0;//工作中
+
+    switch(m_MotionType)
+    {
+    case 1:          //开机初始化
+        initialMachine();
+        break;
+    case 2:          //开始测试
+        taskStart();
+        break;
+    case 3:          //停机后初始化（机器复位，需要重新清洗反应杯，任务队列重新计数…）
+        //        mv_stop_init();
+        break;
+    case 4:          //读Mifare卡片（空闲才能读卡）
+        //        startReadCard();
+        break;
+    }
+
+    m_MotionFinished = 1;//工作完成
+}
+
+//槽：周期定时器计时
+void GScheduler::slt_CycleTimer_timeout()
+{
+    QDateTime time = QDateTime::currentDateTime();               //获取系统现在的时间
+    QString date = time.toString("[yyyy-MM-dd hh:mm:ss.zzz] ");  //设置显示格式
+    qDebug() << "";
+    qDebug() << "****************************************************************************:" << date  << "WorkMode:" << WorkModeFlag;
+    //Action();
+    if( gTcpServer->get_isCanSendNextFrame_Flag() == 1 )
+    {
+        if( isBootCleanedFlag ) //开机未清洗反应杯
+            emit sig_CycleTimer_start(gParameter->getCycleTime());
+        Action();
+    }
+    else
+    {
+        qDebug() << "slt_CycleTimer_Stop..." << "3";
+        WorkModeFlag = MV_State_Error;
+        emit sig_CycleTimer_stop();
+    }
+}
+
+//槽：停止周期定时器计时（意外停机）
+void GScheduler::slt_CycleTimer_Stop()
+{
+    qDebug() << "停止周期定时器计时...";
+    emit sig_CycleTimer_stop();
+}
+
+//槽：暂停
+void GScheduler::slt_Suspend()
+{
+    //MV100工作状态
+    if( WorkModeFlag == MV_State_Normal || WorkModeFlag == MV_State_QC || WorkModeFlag == MV_State_CalibrateT )
+        WorkModeFlag = MV_State_Pause;
+}
+
+//槽：停止
+void GScheduler::slt_Stop()
+{
+    //MV100工作状态
+    if( WorkModeFlag == MV_State_Normal || WorkModeFlag == MV_State_QC
+            || WorkModeFlag == MV_State_CalibrateT || WorkModeFlag == MV_State_Pause)
+    {
+        qDebug() << "slt_CycleTimer_Stop..." << "1 槽：停止";
+        isCycleFlag = 0;       //是否跑周期指令
+        WorkModeFlag = MV_State_Stop;
+        emit sig_CycleTimer_stop(); //停止周期定时器计时
+    }
+}
+
+//开机初始化
+void GScheduler::initialMachine()
+{
+    if( CycleTimer->isActive() )
+        CycleTimer->stop();
+
+    QTime time;
+    time.start();
+    emit sig_initMachine_Step( gParameter->getMachineName() + "系统初始化。。。");   //信号：开机初始化的步骤-MV100系统初始化。。。
+    msleep(1500);
+
+    //打开TCP-Server
+    if( gTcpServer->isTcpConnected() )
+    {
+        qDebug() << "连接中位机服务器成功！";
+        emit sig_initMachine_Step("连接中位机服务器成功！");   //信号：开机初始化的步骤-连接中位机成功！
+        msleep(2000);
+    }
+    else
+    {
+        qDebug() << "连接中位机服务器失败！！";
+        emit sig_initMachine_Step("连接中位机服务器失败！！");   //信号：开机初始化的步骤-连接中位机失败
+        msleep(2000);
+        emit sig_Finished_init();
+        return;
+    }
+
+    //是否要开机自检（复位）
+    if( gParameter->get_isSelfCheck() )
+    {
+        emit sig_initMachine_Step("系统复位中...");   //信号：开机初始化的步骤-系统复位中
+        WorkModeFlag = MV_State_BootReset; //工作模式状态标志=开机复位
+        emit sig_TcpServer_Write(gMVFrame->getResetCmdFrame(), LENGHT_RESET);    //信号：写数据
+
+        int waitTimes = 0;
+        while(1)  //等待中位机复位完成
+        {
+            msleep(1000);
+            if( gTcpServer->get_isCanSendNextFrame_Flag() == 0 )
+                waitTimes ++;
+            else if( gTcpServer->get_isCanSendNextFrame_Flag() == 1)
+            {
+                WorkModeFlag = MV_State_IDLE;  //MV100工作状态
+                emit sig_initMachine_Step("系统复位成功!");   //信号：开机初始化的步骤-系统复位失败
+                break;
+            }
+
+            if( waitTimes >= 20 )  //20秒没有复位成功
+            {
+                emit sig_initMachine_Step("系统复位失败!!");   //信号：开机初始化的步骤-系统复位失败
+                break;
+            }
+        }
+
+        //样本搅拌杆复位
+        emit sig_TcpServer_Write(gMVFrame->getResetSampleMix(), LENGHT_RESETSAMPLEMIX);    //信号：写数据
+        waitTimes = 0;
+        while(1)  //等待中位机复位完成
+        {
+            msleep(1000);
+            if( gTcpServer->get_isCanSendNextFrame_Flag() == 0 )
+                waitTimes ++;
+            else if( gTcpServer->get_isCanSendNextFrame_Flag() == 1)
+            {
+                WorkModeFlag = MV_State_IDLE;  //MV100工作状态
+                emit sig_initMachine_Step("系统复位成功!");   //信号：开机初始化的步骤-系统复位失败
+                break;
+            }
+
+            if( waitTimes >= 10 )  //20秒没有复位成功
+            {
+                emit sig_initMachine_Step("系统复位失败!!");   //信号：开机初始化的步骤-系统复位失败
+                break;
+            }
+        }
+
+    }
+    else
+        WorkModeFlag = MV_State_unChecked ; //MV100工作状态
+
+    msleep(2000);
+    emit sig_Finished_init();
+    qDebug() << "开机初始化 initialMachine time:" << time.elapsed() << "状态：" << WorkModeFlag;
+}
+
+//开始测试
+void GScheduler::taskStart()
+{
+    msleep(50);
+    if( !isBootCleanedFlag ) //开机未清洗反应杯
+    {
+        qDebug() << "开始测试.....";
+        //判断第一个测试的样本是否需要搅拌
+        QString str  =
+                " select TaskT.id, SampleTypeT.isStir, samplePos from TaskT "
+                //连接方式(项目表、样本类型表)
+                " Inner join SampleTypeT ON TaskT.sampleTypeID = SampleTypeT.id "
+                //只查找未完成状态的任务（待测试）
+                " where TaskT.stateID = " + QString::number(State_WAIT) + " "
+                //排序查询：紧急否降序＋样本号升序＋是否搅拌排序（同一样本所申请的测试按样本不需要搅拌的先进行，然后再测要搅拌的项目）
+                " order by TaskT.samplePos asc "
+                //每次取出的已经申请的测试个数
+                " limit 0, 1;";
+
+        QSqlQuery  query = SQLite::getInstance()->Select(str);  //查询数据库
+        while(query.next())
+        {
+            isCurrentSampleNeedMix = query.value(1).toInt();
+            CurrentMixSamplePos = query.value(2).toString();
+            CurrentMixSampleSlot = CurrentMixSamplePos.split("-").at(0).toInt();     //当前搅拌位的样本架
+            CurrentMixSampleNo = CurrentMixSamplePos.split("-").at(1).toInt();       //当前搅拌位的样本位
+        }
+        qDebug() << "00 CurrentMixSamplePos：" << CurrentMixSamplePos << "isCurrentSampleNeedMix:" << isCurrentSampleNeedMix;
+
+        //更换样本架(默认)
+        CurrentMixSampleNo = CurrentMixSampleNo+SAMPLESLOT_COUNT;
+
+        WorkModeFlag = MV_State_Normal;  //工作模式状态标志=普通样本测试
+        emit sig_CycleTimer_start(CLEANCUP_TIME);
+        Action();
+    }
+    else //
+    {
+        if( getTaskInfo() )
+        {
+            qDebug() << "开始测试2.....";
+            WorkModeFlag = MV_State_Normal;  //工作模式状态标志=普通样本测试
+            emit sig_CycleTimer_start(gParameter->getCycleTime());
+            Action();
+        }
+        else
+        {
+            qDebug() << "slt_CycleTimer_Stop..." << "2  taskStart...";
+            WorkModeFlag = MV_State_IDLE;  //工作模式状态标志=空闲状态（开机自检完成）
+            emit sig_CycleTimer_stop();
+            qDebug() << "*****CycleTimer:" << CycleTimer->isActive();
+        }
+    }
+}
+
+//分配反应杯前都要检查反应杯是否清洗干净(0:正常，1:脏杯)
+int GScheduler::CheckCupStatus(int cNo)
+{
+    //每次都检查两个反应杯（杯1， 杯2）
+
+    //测试阶段-返回正常
+    return 0;
+}
+
+//从数据库中取出测试数据
+int GScheduler::getTaskInfo()
+{
+    //暂停状态（即将正在进行的测试正常进行，等待状态的测试不进行加样）
+    if( WorkModeFlag >= MV_State_Pause )
+        return 0;
+
+    //数据库中是否有已经申请且未测试的任务
+    int value = 0;
+    QString sampleCode;   //样本条码
+    //任务id，项目d，测试类型，样本类型，急诊否，样本搅拌否，稀释否
+    int id, projectID, testType, sampleMode, isEmergency, isStirSample, isMixCurrentSample, isDiluent;
+    //样本编号，稀释液编号，R1编号，R2编号，样本量，稀释液量，R1量，稀释后样本量，R2量
+    int R0, R1, R2, SampleV, R0V, R1V, RSV, R2V;
+    //测光点1，测光点2
+    int lightPos1, lightPos2, isRetest;
+    QString taskNo, dateTime, SamplePos;  //测试编号、申请时间、样本位置
+    int isCalculateProj; //计算项目否;
+    int QcLiquidID; //质控液ID
+
+    //从数据库中取出用户申请的测试信息，并存入循环队列，等待执行
+    QString str  =
+            //任务id，状态，测试编号，申请时间，项目id，测试类型，样本类型，样本条码，
+            " select TaskT.id, stateID, TaskT.no, dateTime, projectID, typeID, sampleTypeID, sampleCode, "
+            //急诊否，样本搅拌否，稀释否，样本编号，稀释液编号，R1编号，R2编号，样本量，稀释液量，R1量，稀释后样本量，R2量
+            " isEmergency, SampleTypeT.isStir, ProjectT.isDiluent, samplePos, r0ID, r1ID, r2ID, sample_V, r0_V, r1_V, rs_V, r2_V, "
+            //测光点1，测光点2, 重测否, 计算项目否
+            " ProjectT.lightPos1, ProjectT.lightPos2, isRetest, isCalculateProj, calculateProjID, QcLiquidID "
+            " from TaskT "
+            //连接方式(任务队列表、项目表)
+            " Inner join ProjectT ON TaskT.projectID = ProjectT.id "
+            //连接方式(表、计算项目表)
+            " Inner join CalculateProjectT ON TaskT.calculateProjID = CalculateProjectT.id "
+            //连接方式(项目表、样本类型表)
+            " Inner join SampleTypeT ON TaskT.sampleTypeID = SampleTypeT.id "
+            //只查找未完成状态的任务（待测试）
+            " where TaskT.stateID = 3 "
+            //是否缺样本、试剂
+            //+ lackReagentSample +
+            //排序查询：紧急否降序＋样本号升序＋是否搅拌排序（同一样本所申请的测试按样本不需要搅拌的先进行，然后再测要搅拌的项目）
+            //排序查询： (解决了样本排序，1，10，2，3，4 的问题)
+            " order by TaskT.samplePos asc, ProjectT.orderN asc, isCalculateProj desc "
+            //每次取出的已经申请的测试个数
+            " limit 0, 1;";
+    //" limit 0, "+ QString::number( RUNCOUNT ) +";";
+
+    //qDebug() << str;
+    QSqlQuery  query = SQLite::getInstance()->Select(str);  //查询数据库
+    while(query.next())
+    {
+        id            = query.value(0).toInt();
+        taskNo      = query.value(2).toString();//测试编号
+        dateTime      = query.value(3).toString();  //申请时间
+        projectID     = query.value(4).toInt();
+        testType      = query.value(5).toInt();
+        sampleMode    = query.value(6).toInt();
+        sampleCode    = query.value(7).toString(); //条码是字符串
+        isEmergency   = query.value(8).toInt();
+        isMixCurrentSample  = query.value(9).toInt();
+        isDiluent     = query.value(10).toInt();
+        SamplePos     = query.value(11).toString();
+        R0            = query.value(12).toInt();
+        R1            = query.value(13).toInt();
+        R2            = query.value(14).toInt();
+        SampleV       = query.value(15).toInt();
+        R0V           = query.value(16).toInt();
+        R1V           = query.value(17).toInt();
+        RSV           = query.value(18).toInt();
+        R2V           = query.value(19).toInt();
+        lightPos1     = query.value(20).toInt();
+        lightPos2     = query.value(21).toInt();
+        isRetest      = query.value(22).toInt();
+        isCalculateProj= query.value(23).toInt();
+        if(isCalculateProj == 1) //计算项目
+            projectID = query.value(24).toInt();
+        QcLiquidID= query.value(25).toInt();
+
+
+        //判断搅拌位的样本是否需要搅拌
+        isStirSample = 0;
+        int slot = SamplePos.split("-").at(0).toInt();
+        int sampleNo = SamplePos.split("-").at(1).toInt();       //当前搅拌位的样本位
+        QString pos = QString::number(slot) + "-" + QString::number(sampleNo+2);
+        QString str  =
+                " select TaskT.id, SampleTypeT.isStir from TaskT "
+                //连接方式(项目表、样本类型表)
+                " Inner join SampleTypeT ON TaskT.sampleTypeID = SampleTypeT.id "
+                //只查找未完成状态的任务（待测试）
+                " where TaskT.stateID = " + QString::number(State_WAIT) + " and samplePos='" + pos + "' "
+                //每次取出的已经申请的测试个数
+                " limit 0, 1;";
+        QSqlQuery query1 = SQLite::getInstance()->Select(str);  //查询数据库
+        while(query1.next())
+        {
+            isStirSample  = query1.value(1).toInt();
+        }
+
+        //是否成功进入任务队列
+        if( enTaskList(id, projectID, testType, sampleMode, isMixCurrentSample, isStirSample, isDiluent, sampleCode,
+                       SamplePos, R0, R1, R2, SampleV, R0V, R1V, RSV, R2V, dateTime, lightPos1, lightPos2, isRetest, taskNo, isCalculateProj, QcLiquidID) )
+        {
+            m_BlankCycleCount = BLANKCYCLE_R2;  //最后一个测试加完R2后还要跑的空周期次数
+            value = 1;
+
+            //测试打印信息
+            qDebug() << "";
+            qDebug() << "ueryTaskT()...id=" << id;
+            qDebug() << "*******************************************************************************";
+            qDebug() << "TaskPt:" << m_TaskPt << " ,id:" << id << "ProjectID:" << projectID << " CalculateProj:" << isCalculateProj
+                     << " ,cup1:" << TaskList[m_TaskPt].Cup[0] <<" ,cup2:"<< TaskList[m_TaskPt].Cup[1];
+            qDebug() << "StirSample:" << isStirSample << " ,Diluent:" << isDiluent << "SamplePos:" << SamplePos;
+
+            msleep(10);
+            emit sig_Update_ApplicationTaskList();     //信号：更新已申请的测试的状态
+            emit sig_AutoUpdateSampleList();           //信号：有新的样本进行测试，"结果查询"界面"样本编号"列表
+            emit sig_UpdateApplicatedCount();          //信号：实时更新数据库中状态为“等待”的测试的个数
+        }
+    }
+
+    //计算项目，属于虚拟项目无实际加样动作.
+    if(isCalculateProj == 1 && value ==1)
+    {
+        qDebug() << "计算项目。。。。。重新查询.........";
+        msleep(5);
+        value = getTaskInfo();
+    }
+
+    /*while(query.next())
+        {
+            m_TaskPt ++;
+            if( m_TaskPt >= TASKCOUNT )//超出任务队列长度
+                m_TaskPt = 0;
+
+            qDebug() << "Task id(DB):" << query.value(0).toInt();
+
+            //状态：（0:空闲， 1:任务测试）
+            if( TaskList[m_TaskPt]->Status == 0 )
+            {
+                //检查即将使用的反应杯是否在限定范围之内（反应盘杯号从0~59）
+                if( m_UsedCup >= REACTION_CUP_COUNT )
+                    m_UsedCup = m_UsedCup-REACTION_CUP_COUNT;
+
+                //分配反应杯前都要检查反应杯是否清洗干净, 若为脏杯则？？？？？？
+                if( CheckCupStatus(m_UsedCup) ) return 0;
+                TaskList[m_TaskPt]->Cup[0] = m_UsedCup++;  //测试用的反应杯号（注：cup[0]用稀释样本，cup[2]用于孵育）
+                TaskList[m_TaskPt]->Cup[1] = m_UsedCup++;  //测试用的反应杯号（注：cup[0]用稀释样本，cup[2]用于孵育）
+
+                TaskList[m_TaskPt]->id = query.value(0).toInt(); //对应数据库中任务队列表中的ID
+                TaskList[m_TaskPt]->SampleType = query.value(2).toInt(); //样本类型（1：血清，2：全血，3：血浆, 4:尿液）
+                TaskList[m_TaskPt]->AD_Count = 0; //采光次数
+                TaskList[m_TaskPt]->ProjectId = query.value(3).toInt();     //项目id
+                TaskList[m_TaskPt]->SamplePos = query.value(4).toString();  //样本位置
+                TaskList[m_TaskPt]->SampleCode = query.value(5).toString(); //样本试管编号（条码）
+                TaskList[m_TaskPt]->AD1 = 0;
+                TaskList[m_TaskPt]->AD2 = 0;
+
+                //对应数据库中历史结果数据表中的ID
+                int h_id = insertIntoTempHistoryT(query.value(1).toString(), query.value(2).toInt(), query.value(6).toString(),
+                                                  query.value(8).toInt(), query.value(9).toInt());
+
+                //是否插入成功"历史结果数据表"
+                if(! h_id)
+                {
+                    m_TaskPt --;
+                    return 0;
+                }
+
+                TaskList[m_TaskPt]->History_id = h_id;
+                TaskList[m_TaskPt]->isAdded = false;
+                //（注:）最后才能确定状态
+                TaskList[m_TaskPt]->Status = 1; //状态：（0:空闲， 1:任务测试）
+
+                m_BlankCycleCount = BLANKCYCLE_R2;  //最后一个测试加完R2后还要跑的空周期次数
+                value = 1;
+
+                emit sig_Update_ApplicationTaskList();     //信号：更新已申请的测试的状态
+
+                //测试打印信息
+                qDebug() << "";
+                qDebug() << "从数据库中取出测试数据(new Task)... ";
+                qDebug() << "*******************************************************************************";
+                qDebug() << "TaskPt:" << m_TaskPt << " ,id:" << TaskList[m_TaskPt]->id
+                         << "Project:" << gParameter->getPorject_Name( TaskList[m_TaskPt]->ProjectId )
+                         << ", cup1:" << TaskList[m_TaskPt]->Cup[0] <<", cup2:"<< TaskList[m_TaskPt]->Cup[1]
+                         << ", SamplePos:" << TaskList[m_TaskPt]->SamplePos << ", SampleCode:" << TaskList[m_TaskPt]->SampleCode;
+                return value;
+            }
+            else //分配不成功 咋整？？？
+            {
+                qDebug() << "测试入栈不成功！！" << ", function:" << __func__  << ", Line:" << __LINE__;
+                return 0;
+            }
+        }*/
+    return value;
+}
+
+//将从数库中取出来的测试放到任务队列中
+int GScheduler::enTaskList(int id, int projectID, int testType, int sampleMode, int isMixCurrentSample, int isStirSample, int isDiluent,
+                           QString SampleCode, QString SamplePos, int R0, int R1, int R2, int SampleV, int R0V, int R1V, int RSV, int R2V,
+                           QString applicateTime, int lightPos1, int lightPos2, int isRetest, QString taskNo, int isCalculateP, int QcLiquidID)
+{
+    m_TaskPt ++;
+
+    if( m_TaskPt >= TASKCOUNT )//超出任务队列长度
+        m_TaskPt = 0;
+    if( TaskList[m_TaskPt].Status == 0 )          //检查队列的状态是完为空闲，否则不能进队列（0:空闲， 1:任务测试）
+    {
+        //加样开始执行的步骤及反应杯的分配
+        if( isCalculateP == 0) //常规项目才需要分配反应杯
+        {
+            //每次分配反应杯都要检查反应杯是否能使用（即是否干净）
+            if( CheckCupStatus(2) ) return 0;
+
+            if( m_UsedCup > REACTION_CUP_COUNT )
+                m_UsedCup = m_UsedCup-REACTION_CUP_COUNT;
+            TaskList[m_TaskPt].Cup[0] = m_UsedCup ++; //测试用的反应杯号
+
+            if( m_UsedCup > REACTION_CUP_COUNT )
+                m_UsedCup = m_UsedCup-REACTION_CUP_COUNT;
+            TaskList[m_TaskPt].Cup[1] = m_UsedCup ++; //测试用的反应杯号
+        }
+        else
+        {
+            TaskList[m_TaskPt].Cup[0] = 99;
+            TaskList[m_TaskPt].Cup[1] = 99;
+        }
+
+        TaskList[m_TaskPt].Status = 2;            //状态：（0:空闲， 1:任务测试）
+        TaskList[m_TaskPt].id = id;               //对应数据库中任务队列表中的ID。
+        TaskList[m_TaskPt].AD_Count = 1;          //采光次数
+        TaskList[m_TaskPt].LightPos1 = lightPos1; //采光点1
+        TaskList[m_TaskPt].LightPos2 = lightPos2; //采光点2
+
+        TaskList[m_TaskPt].isCalculateProj = isCalculateP;//计算项目否
+        TaskList[m_TaskPt].ProjectId = projectID;       //项目id（常规项目id/计算项目id）
+        TaskList[m_TaskPt].TestType = testType;         //测试类型（1：样本测试，2：质控测试，3：定标测试）
+        TaskList[m_TaskPt].SampleType = sampleMode;     //标本类型（1：全血，2：血清，3：血浆）
+
+        TaskList[m_TaskPt].isMixNextSample = isStirSample; //样本是否需要搅拌
+        TaskList[m_TaskPt].isMixCurrentSample = isMixCurrentSample; //当前样本是否需要搅拌（切换样本架时需要用到）
+        TaskList[m_TaskPt].isDiluent = isDiluent;       //样本是否需要稀释
+        TaskList[m_TaskPt].SampleCode = SampleCode;  //样本试管编号（条码）
+        TaskList[m_TaskPt].SamplePos = SamplePos;    //样本
+
+        TaskList[m_TaskPt].Reagent0 = R0;            //稀释液编号
+        TaskList[m_TaskPt].Reagent1 = R1;            //R1编号
+        TaskList[m_TaskPt].Reagent2 = R2;            //R2编号
+
+        TaskList[m_TaskPt].VolumeR0 = R0V;        //稀释液R0量
+        TaskList[m_TaskPt].VolumeSample = SampleV;//样本量
+        TaskList[m_TaskPt].VolumeR1 = R1V;        //R1量
+        TaskList[m_TaskPt].VolumeRS = RSV;        //稀释后样本的量
+        TaskList[m_TaskPt].VolumeR2 = R2V;        //R2量
+
+        int historyId =  insertIntoTempHistoryT(m_TaskPt, taskNo, applicateTime, QcLiquidID, isRetest);
+        if( historyId ) //id >0
+            TaskList[m_TaskPt].History_id = historyId;
+        else
+        {
+            return 0; //失败  咋整？？
+        }
+
+
+        //若为计算项目，则无加样动作
+        if(isCalculateP == 1)
+            TaskList[m_TaskPt].LightPos2 = 10; //采光点2
+
+        return 1; //成功
+    }
+    else   //分配不成功 咋整？？？
+    {
+        qDebug() << "Status:" << TaskList[m_TaskPt].Status << " function:" << __func__  << " ,Line:" << __LINE__;
+        return 0;
+    }
+}
+
+//将正在进行的测试（刚从数据库任务表中取出来的测试）添加到数据库历史结果数据表中
+int GScheduler::insertIntoTempHistoryT(int TaskT_id, QString taskNo, QString applicateT, int QcLiquidID, int isRetest)
+{
+    //返回新增历史结果数据表（TempHistoryT）的ID
+    int id = -1; //添加不成功
+    QDateTime time = QDateTime::currentDateTime();//获取系统现在的时间
+    QString formatT = time.toString("yyyy-MM-dd hh:mm:ss");      //设置显示格式
+
+    //保存反应杯号
+    QString cup1, cup2;
+    cup1 = QString::number(TaskList[TaskT_id].Cup[0]);
+    cup2 = QString::number(TaskList[TaskT_id].Cup[1]);
+
+    //qDebug() << "******************" << TaskList[TaskT_id].Cup[0] << TaskList[TaskT_id].Cup[1] << cup1 << cup2;
+    int cID, pID;
+    if(TaskList[TaskT_id].isCalculateProj == 1) //计算项目
+    {
+        cID = TaskList[TaskT_id].ProjectId;
+        pID = 1;
+    }
+    else
+    {
+        cID = 1;
+        pID = TaskList[TaskT_id].ProjectId;
+    }
+
+    //添加一条记录到数据库中
+    QString str =
+            "insert into TempHistoryT("
+            //测试编号、状态、申请时间、测试时间、用户id、测试类型、是否为计算项目、常规项目id、计算项目ID、质控液ID
+            "T_id, no, statusID, applyTime, testDate, userID, typeID, isCalculateProj, projectID, calculateProjID, qcLiquidID, "
+            //样本条码、样本编号、样本类型、打印否、急诊否、重测否、修改否、测光点1、测光点2
+            " sampleCode, SamplePos, Cup0, Cup1, sampleTypeID, "
+            " isPrint, isRetest, isModify, lightPos1, lightPos2) "
+            " values( "
+            + QString::number(TaskList[TaskT_id].id)+ ", " //任务表中对应的id
+            " '" + taskNo + "', "
+            +" 4, "
+            +"'" + applicateT + "', " //申请时间
+            +"'" + formatT + "'" + ", "       //测试时间
+            + QString::number(gParameter->getUserID())+ ", " //用户id
+            + QString::number(TaskList[TaskT_id].TestType)+ ", "   //测试类型
+
+            + QString::number(TaskList[TaskT_id].isCalculateProj)+ ", " //计算项目否
+            + QString::number(pID)+ ", "       //项目id
+            + QString::number(cID)+ ", "       //项目id
+            + QString::number(QcLiquidID)+ ", "       //质控液id
+
+            + "'"+ TaskList[TaskT_id].SampleCode  + "', "               //样本条码
+            + "'"+ TaskList[TaskT_id].SamplePos + "', "                  //样本位置
+
+            + "'"+ TaskList[TaskT_id].Cup[0] + "', "                       //反应杯1
+            + "'"+ TaskList[TaskT_id].Cup[1] + "', "                      //反应杯2
+
+            + QString::number(TaskList[TaskT_id].SampleType)+ ", " //样本类型
+            + "0, " //打印否
+            + QString::number(isRetest)+ ", " //重测否
+            + "0, " //修改否
+            + QString::number(TaskList[TaskT_id].LightPos1) + ", " //测光点1
+            + QString::number(TaskList[TaskT_id].LightPos2)        //测光点2
+            + " );";
+
+    //qDebug() << str;
+
+    if( SQLite::getInstance()->Insert(str) )
+    {
+
+        //获取历史结果数据表新增行的id（即最大id）
+        str  = "SELECT MAX(id) FROM TempHistoryT;";  //表的总行数
+        QSqlQuery  query = SQLite::getInstance()->Select(str);
+        while(query.next())
+            id = query.value(0).toInt();
+    }
+    else
+    {
+        return 0;
+        qDebug() << "**" << " function:" << __func__  << " ,Line:" << __LINE__;
+    }
+    return id;
+}
+
+void GScheduler::Action()
+{
+    //测试前是否需要先清洗反应杯（刚开完机后需要清洗一段反应杯）
+    //if( 0 )
+    if( !isBootCleanedFlag )
+    {
+        //清洗反应杯3次
+        if( m_BootCleanedTimes < BLANKCYCLE_INIT )
+        {
+            emit sig_CycleTimer_start(CLEANCUP_TIME);
+            emit sig_TcpServer_Write(gMVFrame->getCleamCupCmd(), LENGHT_CLEANCUP);  //信号：写数据
+            m_BootCleanedTimes ++;
+            //emit sig_setCupStatus(m_BootCleanedTimes, "Clean");
+            CurrentCleaningCupNo = m_BootCleanedTimes;
+            qDebug() << "清洗机构第1阶：" << CurrentCleaningCupNo;
+            qDebug() << "..开机已经清洗了反应杯:" << m_BootCleanedTimes;
+            return;
+        }
+        //周期指令清洗反应杯2次（共4个反应杯）
+        else if( m_BootCleanedTimes < BLANKCYCLE_INIT + BLANKCYCLE_INIT2*2  )
+        {
+            m_BootCleanedTimes = m_BootCleanedTimes + 2;
+            CurrentCleaningCupNo = m_BootCleanedTimes;
+            qDebug() << "清洗机构第1阶：" << CurrentCleaningCupNo;
+            qDebug() << "..开机已经清洗了反应杯:" << m_BootCleanedTimes;
+
+            emit sig_CycleTimer_start(gParameter->getCycleTime());
+            //
+            CombineEmptyCycleCmd(1, CurrentMixSampleNo, isCurrentSampleNeedMix, 1, 0, 0);
+
+            if(m_BootCleanedTimes == BLANKCYCLE_INIT + BLANKCYCLE_INIT2*2)
+            {
+                ////从数据库中取出任务
+                getTaskInfo();
+
+                isCurrentSampleNeedMix= 0;
+                CurrentMixSampleSlot = 0;     //当前搅拌位的样本架
+                CurrentMixSampleNo = 0;       //当前搅拌位的样本位
+                CurrentMixSamplePos = "";  //当前搅拌的样本位置
+            }
+            else
+            {
+                //查看当前搅拌位的下一个样本是否需要搅拌
+                CurrentMixSampleNo = CurrentMixSamplePos.split("-").at(1).toInt();       //当前搅拌位的样本位
+                QString pos = QString::number(CurrentMixSampleSlot) + "-" + QString::number(CurrentMixSampleNo+1);
+                QString str  =
+                        " select TaskT.id, SampleTypeT.isStir, samplePos from TaskT "
+                        //连接方式(项目表、样本类型表)
+                        " Inner join SampleTypeT ON TaskT.sampleTypeID = SampleTypeT.id "
+                        //只查找未完成状态的任务（待测试）
+                        " where TaskT.stateID = " + QString::number(State_WAIT) + " and samplePos='" + pos +"' "
+                        //排序查询：紧急否降序＋样本号升序＋是否搅拌排序（同一样本所申请的测试按样本不需要搅拌的先进行，然后再测要搅拌的项目）
+                        " order by TaskT.samplePos asc "
+                        //每次取出的已经申请的测试个数
+                        " limit 0, 1;";
+                qDebug() << str;
+                QSqlQuery  query = SQLite::getInstance()->Select(str);  //查询数据库
+                while(query.next())
+                {
+                    isCurrentSampleNeedMix = query.value(1).toInt();
+                    CurrentMixSamplePos = query.value(2).toString();
+                    CurrentMixSampleSlot = CurrentMixSamplePos.split("-").at(0).toInt();     //当前搅拌位的样本架
+                    CurrentMixSampleNo = CurrentMixSamplePos.split("-").at(1).toInt();       //当前搅拌位的样本位
+                }
+                //当前测试的样本架的编号（用于判断是前后测试是否在同一样本架上）
+                CurrentSampleSlot = QString::number( CurrentMixSampleSlot );
+                qDebug() << "CurrentMixSamplePos：" << CurrentMixSamplePos << "isCurrentSampleNeedMix:" << isCurrentSampleNeedMix;
+            }
+            return;
+        }
+        else
+        {
+            emit sig_CycleTimer_start(gParameter->getCycleTime());
+            isBootCleanedFlag = true;//开机已经清洗了反应杯,可以进行测试了
+        }
+    }
+
+    //所有加样完成后的**指令
+    if(TaskList[m_TaskPt].Status == 1)
+    {
+        if( m_BlankCycleCount > 0)
+        {
+            qDebug() << "";
+            qDebug() << "********空周期指令 剩余次数:" << m_BlankCycleCount;
+
+            //当前测试的周期指令整合
+            CombineEmptyCycleCmd(1, 1, 0, 0, 1, 0);
+
+            m_BlankCycleCount --;
+            getTaskInfo();
+
+
+            int CleanCup = m_UsedCup + BLANKCYCLE_INIT + BLANKCYCLE_INIT2*2;
+            if( CleanCup > REACTION_CUP_COUNT)
+                CleanCup = CleanCup - REACTION_CUP_COUNT;
+            CurrentCleaningCupNo = CleanCup;
+            emit sig_setCupStatus(CleanCup, "Clean");
+
+            qDebug() << "**清洗机构第1阶：" << CleanCup;
+            m_UsedCup = m_UsedCup+2; //反应杯号递进2个
+        }
+        else
+        {
+            qDebug() << "********所有测试已经完成了........";
+            emit sig_CycleTimer_stop(); //定时器停止工作
+            WorkModeFlag = MV_State_IDLE;   //空闲状态（开机自检完成 | 测试完停机状态）
+        }
+        return;
+    }
+
+    //更换样本架（要发x个空周期）
+    if(CurrentSampleSlot != TaskList[m_TaskPt].SamplePos.split("-").at(0))
+    {
+        qDebug() << "更换样本架:" <<  CurrentSampleSlot << TaskList[m_TaskPt].SamplePos.split("-").at(0)
+                 << " 第"<< ChangedSampleSlot << "次";
+
+        //第一个空周期（切换样本架）
+        if(ChangedSampleSlot == CHANGESAMPLESLOT)
+        {
+            CombineEmptyCycleCmd(1, 1 + SAMPLESLOT_COUNT, 0, 1, 1, 0);
+            ChangedSampleSlot --;
+            return;
+        }
+        //第2个空周期（移动当前样本到搅拌位）
+        if(ChangedSampleSlot == CHANGESAMPLESLOT-1)
+        {
+            int sPos = TaskList[m_TaskPt].SamplePos.split("-").at(1).toInt();
+            int isMix = TaskList[m_TaskPt].isMixCurrentSample;
+            CombineEmptyCycleCmd(1, sPos, isMix, 1, 1, 0);
+            ChangedSampleSlot --;
+            return;
+        }
+        //第3个空周期（下一样本是否也需要搅拌）
+        else if( ChangedSampleSlot == CHANGESAMPLESLOT-2)
+        {
+            //查看当前搅拌位的下一个样本是否需要搅拌
+            QString slot =  TaskList[m_TaskPt].SamplePos.split("-").at(0);
+            int CurrentSampleNo = TaskList[m_TaskPt].SamplePos.split("-").at(1).toInt() +1;       //当前搅拌位的样本位
+            QString pos = slot + "-" + QString::number(CurrentSampleNo);
+            QString str  =
+                    " select TaskT.id, SampleTypeT.isStir, samplePos from TaskT "
+                    //连接方式(项目表、样本类型表)
+                    " Inner join SampleTypeT ON TaskT.sampleTypeID = SampleTypeT.id "
+                    //只查找未完成状态的任务（待测试）
+                    " where TaskT.stateID = " + QString::number(State_WAIT) + " and samplePos='" + pos +"' "
+                    //排序查询：紧急否降序＋样本号升序＋是否搅拌排序（同一样本所申请的测试按样本不需要搅拌的先进行，然后再测要搅拌的项目）
+                    " order by TaskT.samplePos asc "
+                    //每次取出的已经申请的测试个数
+                    " limit 0, 1;";
+            qDebug() << str;
+            QSqlQuery  query = SQLite::getInstance()->Select(str);  //查询数据库
+            int isMix;
+            while(query.next())
+            {
+                isMix = query.value(1).toInt();
+            }
+            CombineEmptyCycleCmd(1, CurrentSampleNo, isMix, 1, 1, 0);
+            ChangedSampleSlot --;
+            return;
+        }
+        else
+        {
+            CurrentSampleSlot = TaskList[m_TaskPt].SamplePos.split("-").at(0);
+            //切换样本架（需要加两个空周期）
+            ChangedSampleSlot = CHANGESAMPLESLOT;
+        }
+    }
+
+    //当前样本加上的样本位之后
+
+    //整合周期指令（发送到中位机）
+    if( TaskList[m_TaskPt].Status == 2)
+    {
+        QString a = TaskList[m_TaskPt].SamplePos.split("-").at(1);
+        int no = a.toInt();
+        CombineCycleCmd(no);
+        TaskList[m_TaskPt].Status = 1;
+
+        //改变任务表中当前测试任务的状态
+        msleep(10);
+        QString str =
+                "update TaskT "
+                " set stateID =" + QString::number(State_TESTING) +" , "  //测试状态
+                " HistoryT_id = "
+                + QString::number( TaskList[m_TaskPt].History_id )
+                + " where id ="+ QString::number( TaskList[m_TaskPt].id ) +";";
+        SQLite::getInstance()->Update(str);
+
+        msleep(10);
+        emit sig_Update_ApplicationTaskList();     //信号：更新已申请的测试的状态
+        emit sig_AutoUpdateSampleList();           //信号：有新的样本进行测试，"结果查询"界面"样本编号"列表
+        emit sig_UpdateApplicatedCount();          //信号：实时更新数据库中状态为“等待”的测试的个数
+    }
+
+    //取出下一个测试的信息-从数据库中取出测试数据
+    msleep(50); //要有延时，不能太快查询数据库
+    getTaskInfo();
+
+}
+
+//整合周期指令（发送到中位机）
+void GScheduler::CombineCycleCmd(int sampleNo)
+{
+    //当前测试的周期指令整合
+    char *TestCycle = gMVFrame->getTestCycleCmd();
+
+    //当前反应盘的杯位（0表示不转反应盘）
+    TestCycle[8]  = 0x01;
+
+    //
+    int water = 400;
+    int liquid = 350;
+    TestCycle[9]  = water/128;  //清水吸液量高7位
+    TestCycle[10] = water%128;  //清水吸液量低7位（0不动作）
+    TestCycle[11] = liquid/128;  //清液吸液量低7位
+    TestCycle[12] = liquid%128;  //清液吸液量低7位（0不动作）
+
+    //稀释液、R1、R2在试剂盘上位置
+    TestCycle[13] = TaskList[m_TaskPt].Reagent0;
+    TestCycle[14] = TaskList[m_TaskPt].Reagent1;
+    TestCycle[15] = TaskList[m_TaskPt].Reagent2;
+
+    //（稀释液）第一试剂吸液量高7位（单位ul）
+    TestCycle[16] = TaskList[m_TaskPt].VolumeR0/128;
+    //（稀释液）第一试剂吸液量低7位（吸液量0表示不吸第一试剂）
+    TestCycle[17] = TaskList[m_TaskPt].VolumeR0%128;
+
+    //（R1）第二试剂吸液量高7位（单位ul）
+    TestCycle[18] = TaskList[m_TaskPt].VolumeR1/128;
+    //（R1）第二试剂吸液量低7位（吸液量0表示不吸第一试剂）
+    TestCycle[19] = TaskList[m_TaskPt].VolumeR1%128;
+
+    //（转移样本）转移液体量高7位（单位ul）
+    TestCycle[20] = TaskList[m_TaskPt].VolumeRS/128;
+    //（转移样本）转移液体量低7位（转移量0表示不转移液体）
+    TestCycle[21] = TaskList[m_TaskPt].VolumeRS%128;
+
+    //（R2）第三试剂吸液量高7位（单位ul）
+    TestCycle[22] = TaskList[m_TaskPt].VolumeR2/128;
+    //（R2）第三试剂吸液量低7位（吸液量0表示不吸第一试剂）
+    TestCycle[23] = TaskList[m_TaskPt].VolumeR2%128;
+
+    //是否推动样本架  1—10推到当前试管架对应杯位；11-20推到下一条试管架对应杯位；21自动推试管模式；22推出当前试管架 0不推试管。
+    TestCycle[24] = sampleNo;
+
+    //（样本）样本吸液量高7位（单位ul）
+    TestCycle[25] = TaskList[m_TaskPt].VolumeSample/128;
+    //（样本）样本吸液量低7位 （吸液量0表示不吸样本）
+    TestCycle[26] = TaskList[m_TaskPt].VolumeSample%128;
+
+    //是否搅拌样本（1：全血搅拌，0：不搅拌）
+    TestCycle[27] = TaskList[m_TaskPt].isMixNextSample;
+
+    //是否采集AD数据（1：打开AD采集，0：关闭AD采集）
+    TestCycle[28] = 0x01;
+    //是否打开条码扫描（1：打开条码扫描，0：关闭条码扫描）
+    TestCycle[29] = 0x00;
+    //推到样本位or推到搅拌位（0：推到样本位，1：推到搅拌位）
+    TestCycle[30] = 0x00;
+
+    emit sig_TcpServer_Write(TestCycle, LENGHT_TESTCYCLE);
+}
+
+
+//整合空周期指令（发送到中位机）
+void GScheduler:: CombineEmptyCycleCmd(int turnRD, int samplePos, int isMix, int isMixPox, int isAD, int isScanSampleCode)
+{
+    //当前测试的周期指令整合
+    char *TestCycle = gMVFrame->getTestCycleCmd();
+
+    //当前反应盘的杯位（0表示不转反应盘）
+    TestCycle[8]  = turnRD;
+
+    //
+    int water = 400;
+    int liquid = 350;
+    TestCycle[9]  = water/128;  //清水吸液量高7位
+    TestCycle[10] = water%128;  //清水吸液量低7位（0不动作）
+    TestCycle[11] = liquid/128;  //清液吸液量低7位
+    TestCycle[12] = liquid%128;  //清液吸液量低7位（0不动作）
+
+    //是否推动样本架  1—10推到当前试管架对应杯位；11-20推到下一条试管架对应杯位；21自动推试管模式；22推出当前试管架 0不推试管。
+    TestCycle[24] = samplePos;
+
+    //是否搅拌样本（1：全血搅拌，0：不搅拌）
+    TestCycle[27] = isMix;
+
+    //是否采集AD数据（1：打开AD采集，0：关闭AD采集）
+    TestCycle[28] = isAD;
+    //是否打开条码扫描（1：打开条码扫描，0：关闭条码扫描）
+    TestCycle[29] = isScanSampleCode;
+    //推到样本位or推到搅拌位（0：推到样本位，1：推到搅拌位）
+    TestCycle[30] = isMixPox;
+
+    emit sig_TcpServer_Write(TestCycle, LENGHT_TESTCYCLE);
+}
+
+
+
+
+
+
+
+
+
+//推样本架到指定样本位
+int GScheduler::getSampelPos()
+{
+    //1—10推到当前试管架对应杯位；
+    //11-20推到下一条试管架对应杯位；
+    //21自动推试管模式；
+    //22推出当前试管架 0不推试管。
+
+    return 0;
+}
+
+//样本是否要搅拌（当前搅拌位上的样本是否需要搅拌，1：搅拌，0：不搅拌）
+bool GScheduler::isSampleNeedMix()
+{
+
+    return 0;
+}
+
+//是否要采集AD（1：AD采集，0：不采集）   ///????????????测试阶段，默认打开AD采集 （周期指令默认都要采集AD）
+bool GScheduler::isADCollection()
+{
+    return 1;
+}
+
+//条码扫描（1：打开条码扫描，0：关闭条码扫描）
+bool GScheduler::isSampleCodeCollecton()
+{
+    return 0;
+}
+
+//推样本架开关（0：推到样本位，1：推到搅拌位） ///????????????测试阶段，默认推到样本位
+bool GScheduler::isPushSwitch()
+{
+    return 0;
+}
+
+
+

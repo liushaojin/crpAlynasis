@@ -1,0 +1,56 @@
+*{
+  font-size:18px;
+  color:black;
+  font-family:"宋体";
+}
+
+/****************************************************************************************/
+QLabel{ font-size:20px; color:black; }
+QLabel#lab18{ font-size:18px; color:black; }
+QLabel#lab20{ font-size:20px; color:black; }
+QLabel#lab22{ font-size:22px; color:black; }
+QLabel#lab24{ font-size:23px; color:black; }
+QLabel#lab25{ font-size:24px; color:black; }
+QLabel#lab28{ font-size:28px; color:black; }
+QLabel#lab30{ font-size:30px; color:black; }
+
+
+/****************************************************************************************/
+QLineEdit
+{
+width:180; height:35;
+font-size:20px;
+border: 1px solid rgb(41, 57, 85);
+border-radius:3px;
+background:white;
+selection-background-color:green;
+color:Gray;
+}
+QLineEdit:hover{border: 1px solid blue; color:black;}
+
+
+/****************************************************************************************/
+QCheckBox {spacing: 5px; color:black; font-size:18px;}
+QCheckBox:hover {spacing: 5px; color:green; font-size:18px;}
+QCheckBox::indicator  {width: 15px; height: 15px;}
+QCheckBox::indicator:unchecked          {image: url(:/resource/resource/chk/checkbox_unchecked.png);}
+QCheckBox::indicator:unchecked:disabled {image: url(:/resource/resource/chk/checkbox_unchecked_pressed.png);}
+QCheckBox::indicator:unchecked:hover    {image: url(:/resource/resource/chk/checkbox_unchecked_hover.png);}
+QCheckBox::indicator:checked            {image: url(:/resource/resource/chk/checkbox_checked_pressed.png);}
+QCheckBox::indicator:checked:disabled   {image: url(:/resource/resource/chk/checkbox_checked.png);}
+QCheckBox::indicator:checked:hover      {image: url(:/resource/resource/chk/checkbox_checked_hover.png);}
+
+
+/****************************************************************************************/
+QPushButton{width:120; height:60;  border-radius:8px; font-size:20px; background-color:rgba(50,50,50,30); }
+QPushButton:hover{width:120;height:60; border-radius:8px; font-size:23px; color:darkCyan; background-color:rgba(75,75,75,90);}
+QPushButton:pressed{width:120;height:60; border-radius:8px; font-size:21px; color:darkMagenta; background-color:rgba(80,80,80,99);}
+
+
+/****************************************************************************************/
+/*登录界面QSS*/
+QDialog#loginDlg{background-image: url(:/resource/resource/bg/loginBg.png); border-radius:10px;background-repeat:no-repeat; background-position:center;}
+QFrame#userLoginFrame{width:60; height:60; background-image:url(:/resource/resource/user.png);background-repeat:no-repeat; background-position:center;}
+
+
+QWidget:focus{outline: none;} /*去掉选中时的方框*/

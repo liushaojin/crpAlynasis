@@ -1,0 +1,104 @@
+#include <QApplication>
+#include <qdebug.h>
+#include "AppHelper.h"
+#include "Parameter.h"
+#include "Object/SQLite/sqlite.h"
+#include "Object/ErrorTable/MV_ErrTable.h"
+
+#include "UI/Login/userLogin.h"
+#include "UI/MainWidget/InitWidget.h"
+#include "UI/MainWidget/mv200_MainWidget.h"
+#include "UI/Widget/MessageBox/messageBox.h"
+#include "UI/MainWidget/CurveWidget/resultCurveWidget.h"
+
+#include "Thread/Scheduler.h"
+//#include "Thread/CardThread.h"
+//#include "Thread/SerialThread.h"
+//#include "Thread/SerialThread2.h"
+//#include "Thread/PrinterThread.h"
+#include "Thread/LISCommunicateThread.h"
+#include "Thread/ApplicateThread.h"
+#include "FrameDefine.h"
+
+int main(int argc, char ** argv)
+{
+    //先注册自己的MsgHandler
+    qInstallMessageHandler(AppHelper::outputMessage);
+
+    QDateTime time = QDateTime::currentDateTime();//获取系统现在的时间
+    QString date = time.toString("[yyyy-MM-dd hh:mm:ss]");      //设置显示格式
+    qDebug() << "";
+    qDebug() << "";
+    qDebug() << "";
+    qDebug() << "";
+    qDebug() << "**************************************************************************";
+    qDebug() << "************               MV-200            *****************************";
+    qDebug() << "************       "    <<  date        << " *****************************";
+    qDebug() << "************               BUILD: 2017-08-29                 *************";
+    qDebug() << "**************************************************************************";
+
+    QApplication app(argc, argv);
+    //设置编码
+    AppHelper::SetCode("UTF-8");
+
+    //PC端下解决SQLite (否则无法打开数据库)
+    QString sPath = app.applicationDirPath();
+    sPath += QString("/plugins");
+    app.addLibraryPath(sPath);
+    //数据库实例
+    SQLite::getInstance()->initCheckDB();
+
+    //全局参数
+    gParameter = new GParameter;
+    gParameter->set_isRelease(0); //0:研发版，即供公司内部使用。1：发布版，即供最终客户端使用。
+
+    //信息框
+    gMessageBox = new MVMessageBox;
+
+    //用户登录
+    UserLogin usrLogin;
+    if( usrLogin.exec() == 1 )
+    {
+        //错误表
+        gMV_ErrTable = new MV_ErrTable;
+
+        //
+        gMVFrame = new MVFrame;
+        //TCP通讯
+        gTcpServer = new TcpServer;
+        //gTcpServer->start(QThread::HighestPriority);
+        //调度程序
+        gScheduler = new GScheduler;
+        //测试申请线程
+        gApplicateThread = new ApplicateThread;
+
+        //初始化界面
+        InitWidget *initW = new InitWidget;
+        initW->StartInit();
+
+        //mv100主界面
+        gMV200_MainWidget = new MV200_MainWidget;
+
+
+        //曲线界面
+        ResultCurveWidget::getInstance();
+
+        ////LIS
+        gLISCommunicate = new LISCommunicateThread;
+        QString ip = gParameter->get_LIS_IP().trimmed();
+        int port = gParameter->get_LIS_Port();
+        gLISCommunicate->ConnectoHost( ip, port );
+    }
+    else
+    {
+        SQLite::getInstance()->closeDB();
+        usrLogin.close();
+        return 0;
+    }
+    usrLogin.close();
+
+    return app.exec();
+}
+
+
+

@@ -1,0 +1,115 @@
+*{
+  font-size:18px;
+  color:black;
+  font-family:"宋体";
+}
+/**********子界面背景**********/
+QWidget#customWidget {
+        background: rgb(173, 202, 232);
+}
+
+/**********子界面中央背景**********/
+QWidget#centerWidget {
+        background: rgb(232, 241, 252);
+}
+
+/**********主界面样式**********/
+QWidget#mainWindow {
+        border: 1px solid rgb(111, 156, 207);
+        background: rgb(232, 241, 252);
+}
+
+/**********编辑**********/
+QLineEdit,QTextEdit{
+        background: rgb(232, 241, 252);
+        padding: 0 5px;
+}
+
+QLineEdit:hover{
+        background: white;
+}
+
+/**********按钮**********/
+QPushButton:focus{padding: -1;} /*去掉选中时的方框*/
+
+QPushButton{
+        border-radius: 5px;
+        border: none;
+        font-size: 18px;
+}
+QPushButton:enabled {
+        background: rgb(120, 170, 220);
+        color: black;
+}
+QPushButton:!enabled {
+        background: rgb(180, 180, 180);
+        color: yellow;
+}
+QPushButton:enabled:hover{
+        background: rgb(100, 160, 220);
+        color: white;
+}
+QPushButton:enabled:pressed{
+        background: rgb(0, 78, 161);
+}
+
+
+
+/**********表头**********/
+QHeaderView{
+        border: none;
+        border-bottom: 3px solid rgb(0, 78, 161);
+        background: transparent;
+        min-height: 25px;
+        font-size:18px;
+}
+QHeaderView:section:horizontal {
+        border: none;
+        color: rgb(2, 65, 132);
+        background: transparent;
+        padding-left: 3px;
+}
+QHeaderView:section:horizontal:hover {
+        color: green;
+        background: rgb(0, 78, 161);
+}
+QHeaderView:section:horizontal:pressed {
+        color: black;
+        background: rgb(6, 94, 187);
+}
+
+
+/**********表格**********/
+QTableView,QTableWidget {
+        border: 1px solid rgb(111, 156, 207);
+        gridline-color: rgb(111, 156, 207);
+        background: rgb(232, 241, 232);
+        font-size:18px;
+}
+QTableView,QTableWidget:item {
+        padding-left: 5px;
+        padding-right: 5px;
+        border: none;
+        background: rgb(232, 241, 252);
+        border-right: 1px solid rgb(111, 156, 207);
+        border-bottom: 1px solid rgb(111, 156, 207);
+}
+QTableView,QTableWidget:item:selected {
+        background: rgba(252,216,223, 100);
+        font-size: 18px;
+        color: black;
+}
+QTableView,QTableWidget:item:selected:!active {
+        color: rgb(65, 65, 65);
+}
+QTableView,QTableWidget:indicator {
+        width: 20px;
+        height: 20px;
+}
+
+QTableView::indicator:checked{
+     image:url(://resource/resource/tableView/checked.png);
+}
+QTableView::indicator:unchecked{
+        image:url(://resource/resource/tableView/unChecked.png);
+}
