@@ -1,0 +1,15 @@
+CREATE TABLE `mv200`.`errort` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `dateTime` TIMESTAMP(6) NULL,
+  `errID` INT NULL,
+  `errNo` INT NULL,
+  `Details` VARCHAR(45) NULL,
+  `remarks` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `id_UNIQUE` (`id` ASC));
+
+
+
+
+
+

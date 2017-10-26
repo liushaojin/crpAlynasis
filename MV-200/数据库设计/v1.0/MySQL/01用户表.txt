@@ -1,0 +1,12 @@
+CREATE TABLE `mv200`.`usert` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(20) NOT NULL,
+  `pwd` VARCHAR(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `idUserT_UNIQUE` (`id` ASC),
+  UNIQUE INDEX `name_UNIQUE` (`name` ASC));
+
+
+
+
+INSERT INTO `mv200`.`usert` (`id`, `name`, `pwd`) VALUES ('1', 'root', 'root');

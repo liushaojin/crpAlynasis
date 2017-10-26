@@ -1,0 +1,18 @@
+CREATE TABLE `mv200`.`calibratemethodt` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(20) NULL,
+  `remarks` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `id_UNIQUE` (`id` ASC));
+
+
+
+
+INSERT INTO `mv200`.`calibratemethodt` (`id`, `name`) VALUES ('1', 'Logic5P');
+
+
+
+
+
+
+

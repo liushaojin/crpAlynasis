@@ -1,0 +1,18 @@
+CREATE TABLE `mv200`.`taskt` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `History_id` INT ZEROFILL NULL DEFAULT 0,
+  `taskNo` VARCHAR(20) NULL,
+  `dateTime` TIMESTAMP(6) NULL,
+  `testTime` DATETIME(6) NULL,
+  `userID` INT NULL,
+  `sampleTypeID` INT NULL,
+  `typeID` INT NULL,
+  `isEmergency` INT NULL,
+  `stateID` INT NULL,
+  `samplePos` VARCHAR(10) NULL,
+  `sampleCode` VARCHAR(15) NULL,
+  `projectID` INT NULL,
+  `isReset` INT NULL,
+  `solutionID` INT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `id_UNIQUE` (`id` ASC));

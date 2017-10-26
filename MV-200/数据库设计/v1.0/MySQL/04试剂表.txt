@@ -1,0 +1,7 @@
+CREATE TABLE `mv200`.`reagentt` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(5) NULL,
+  `vol` INT NULL,
+  `usedVol` INT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `id_UNIQUE` (`id` ASC));

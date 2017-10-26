@@ -1,0 +1,22 @@
+CREATE TABLE `mv200`.`testtypet` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(20) NULL,
+  `remarks` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `idTestTypeT_UNIQUE` (`id` ASC));
+
+
+
+
+
+
+
+
+
+INSERT INTO `mv200`.`testtypet` (`id`, `name`, `remarks`) VALUES ('1', 'Normal', '常规测试');
+INSERT INTO `mv200`.`testtypet` (`id`, `name`, `remarks`) VALUES ('2', 'QCTest', '质控测试');
+INSERT INTO `mv200`.`testtypet` (`id`, `name`, `remarks`) VALUES ('3', 'CalibrateTest', '定标测试');
+
+
+
+

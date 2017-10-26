@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('1', 'IDLE');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('2', 'Applicated');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('3', 'Wait');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('4', 'Testing');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('5', 'Diluent');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('6', 'Sample');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('7', 'R1');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('8', 'R_S');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('9', 'R2');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('10', 'Dirty');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('11', 'Finished');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('12', 'Clean');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('13', 'Error');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('14', 'Blank');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('15', 'unFinished');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('16', 'noSample');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('17', 'End1');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('18', 'End2');
+INSERT INTO `mv200`.`statet` (`id`, `name`) VALUES ('19', 'BlankOut');

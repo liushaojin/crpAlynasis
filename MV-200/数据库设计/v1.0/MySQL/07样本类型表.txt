@@ -1,0 +1,30 @@
+CREATE TABLE `mv200`.`sampletypet` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `nameEN` VARCHAR(20) NULL,
+  `nameCN` VARCHAR(20) NULL,
+  `isMix` INT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `idSampleTypeT_UNIQUE` (`id` ASC));
+
+
+
+
+
+
+
+
+
+
+INSERT INTO `mv200`.`sampletypet` (`id`, `nameEN`, `nameCN`, `isMix`) VALUES ('1', 'Serum', 'ÑªÇå', '0');
+INSERT INTO `mv200`.`sampletypet` (`id`, `nameEN`, `nameCN`, `isMix`) VALUES ('2', 'Blood', 'È«Ñª', '1');
+INSERT INTO `mv200`.`sampletypet` (`id`, `nameEN`, `nameCN`, `isMix`) VALUES ('3', 'Plasma', 'Ñª½¬', '0');
+INSERT INTO `mv200`.`sampletypet` (`id`, `nameEN`, `nameCN`, `isMix`) VALUES ('4', 'Urine', 'ÄòÒº', '0');
+
+
+
+
+
+
+
+
+
